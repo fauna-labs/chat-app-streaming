@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Client, fql } from 'fauna'
-import styles from './Chatroom.module.css';
+import styles from './Room.module.css';
 import { useRouter } from 'next/navigation';
 import { FaunaClient } from '../../components/FaunaClient';
 import { CookieInfo } from '@/app/components/CookieInfo';
