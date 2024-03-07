@@ -4,17 +4,33 @@ import { useState, useEffect, useRef } from 'react'
 import { Client, fql } from 'fauna'
 import styles from './Room.module.css';
 import { useRouter } from 'next/navigation';
-import { FaunaClient } from '../../components/FaunaClient';
-import { CookieInfo } from '@/app/components/CookieInfo';
 import Logout from '../../components/Logout'
 import DeleteRoom from '@/app/components/DeleteRoom';
-
-const client = FaunaClient();
 
 const streamClient = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
   endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
 })
+
+const CookieInfo = () => {
+  const cookies = document.cookie.split(';');
+  let cookieData;
+
+  for (const cookie of cookies) {
+    const [name, value] = cookie.split('=').map((c) => c.trim());
+    if (name === 'chat-loggedin') {
+      cookieData = JSON.parse(decodeURIComponent(value));
+      break;
+    }
+  }
+
+  if (!cookieData) {
+    console.log('no valid cookie saved, please log in');
+    window.location.href = '/authenticationform';
+  }
+
+  return cookieData;
+};
 
 export default function Room({ params }) {
   const id = params.id[0];
@@ -25,7 +41,13 @@ export default function Room({ params }) {
   const router = useRouter();
   const messagesContainerRef = useRef(null);
   const info = CookieInfo()
+  console.log('------>', info.key);
   const userName = info?.username;
+
+  const client = new Client({
+    secret: info.key,
+    endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+  })
 
   useEffect(() => {
     fetchData();
@@ -94,8 +116,8 @@ export default function Room({ params }) {
         >
             Go back home?
         </button>
-        <DeleteRoom ownerName={ownerName} userName={userName} roomId={id}/>
-        <Logout />        
+        <DeleteRoom ownerName={ownerName} userName={userName} roomId={id} cookieInfo={info}/>
+        <Logout />         
       </span>
       <div className={styles.userDetails}>
         Your username: <strong>{userName}</strong>

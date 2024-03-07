@@ -4,16 +4,33 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation';
 import { Client, fql } from 'fauna'
 import styles from './Home.module.css';
-import { FaunaClient } from './components/FaunaClient';
-import { CookieInfo } from './components/CookieInfo';
 import Logout from './components/Logout';
-
-const client = FaunaClient();
 
 const streamClient = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
   endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
 })
+
+const CookieInfo = () => {
+  const cookies = document.cookie.split(';');
+  let cookieData;
+
+  for (const cookie of cookies) {
+    const [name, value] = cookie.split('=').map((c) => c.trim());
+    if (name === 'chat-loggedin') {
+      cookieData = JSON.parse(decodeURIComponent(value));
+      break;
+    }
+  }
+
+  if (!cookieData) {
+    console.log('no valid cookie saved, please log in');
+    window.location.href = '/authenticationform';
+  }
+
+  return cookieData;
+};
+
 
 export default function Home() {
   const [roomName, setRoomName] = useState('');
@@ -21,6 +38,11 @@ export default function Home() {
   const router = useRouter();
   const info = CookieInfo()
   const username = info?.username;
+
+  const client = new Client({
+    secret: info.key,
+    endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+  })
 
   useEffect(() => {
     fetchData();
@@ -43,10 +65,6 @@ export default function Home() {
             const existingRoom = prevRooms.find(room => room.id === event?.data.id);
             return existingRoom ? prevRooms : [...prevRooms, event?.data];
           });
-        })
-        .on("remove", event => {
-          console.log("Stream remove -->", event);
-          // Handle removal if needed
         })
         .on('error', event => {
           console.log("Stream error:", event);

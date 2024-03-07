@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { fql } from 'fauna'
+import { Client, fql } from 'fauna'
 import { useRouter } from 'next/navigation';
-import { FaunaClient } from './FaunaClient';
 import styles from './DeleteRoom.module.css'
 
-
-const client = FaunaClient();
-
-export default function DeleteRoom({ ownerName, userName, roomId }) {
+export default function DeleteRoom({ ownerName, userName, roomId, cookieInfo }) {
     const [isOwner, setIsOwner] = useState(false);
     const router = useRouter();
+
+    const client = new Client({
+        secret: cookieInfo?.key,
+        endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+      })
 
     useEffect(() => {
         if(ownerName === userName) {
@@ -21,13 +22,14 @@ export default function DeleteRoom({ ownerName, userName, roomId }) {
 
     const deleteRoomHandler = async (e) => {
         e.preventDefault();
-        // console.log(roomId);
         const result = await client.query(fql`
-            let roomToDelete = Room.byId('${roomId}')
-            roomToDelete
+            let roomToDelete = Room.byId(${roomId})
+            let messagesToDelete = Message.byRoomRef(roomToDelete)
+            messagesToDelete.forEach(message => {message.delete()})
+            roomToDelete?.delete()
+
         `);
-        console.log(result);
-        // router.push('/');
+        router.push('/');
     }
 
     return (
