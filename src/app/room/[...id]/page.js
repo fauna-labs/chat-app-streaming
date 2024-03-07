@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { FaunaClient } from '../../components/FaunaClient';
 import { CookieInfo } from '@/app/components/CookieInfo';
 import Logout from '../../components/Logout'
+import DeleteRoom from '@/app/components/DeleteRoom';
 
 const client = FaunaClient();
 
@@ -24,11 +25,11 @@ export default function Room({ params }) {
   const router = useRouter();
   const messagesContainerRef = useRef(null);
   const info = CookieInfo()
-  const username = info?.username;
+  const userName = info?.username;
 
   useEffect(() => {
     fetchData();
-  }, [username]);
+  }, [userName]);
 
   useEffect(() => {
     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -79,7 +80,7 @@ export default function Room({ params }) {
     if (!newMessage) return
     await client.query(fql`
       let roomRef = Room.byId(${id})
-      Message.create({ "username": ${username}, "message": ${newMessage}, "roomRef": roomRef })
+      Message.create({ "username": ${userName}, "message": ${newMessage}, "roomRef": roomRef })
     `)
     setNewMessage('')
   }
@@ -93,10 +94,11 @@ export default function Room({ params }) {
         >
             Go back home?
         </button>
+        <DeleteRoom ownerName={ownerName} userName={userName} roomId={id}/>
         <Logout />        
       </span>
       <div className={styles.userDetails}>
-        Your username: <strong>{username}</strong>
+        Your username: <strong>{userName}</strong>
       </div>
       <form onSubmit={sendMessage} className={styles.chatForm}>
         <input
@@ -110,8 +112,8 @@ export default function Room({ params }) {
       </form>
       <div className={styles.chatMessages} ref={messagesContainerRef}>
         {messages?.map((msg) => (
-          <div key={msg.id} className={`${styles.messageContainer} ${msg.username === username ? styles.ownMessageContainer : ''}`}>
-            <div className={`${styles.messageBubble} ${msg.username === username ? styles.ownMessageBubble : ''}`}>
+          <div key={msg.id} className={`${styles.messageContainer} ${msg.username === userName ? styles.ownMessageContainer : ''}`}>
+            <div className={`${styles.messageBubble} ${msg.username === userName ? styles.ownMessageBubble : ''}`}>
               <span className={styles.messageText}><strong>{msg.username}</strong>: {msg.message}</span>
             </div>
           </div>
