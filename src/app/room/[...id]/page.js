@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Client, fql } from 'fauna'
 import styles from './Chatroom.module.css';
+import { useRouter } from 'next/navigation';
 
 const client = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
@@ -16,10 +17,17 @@ export default function Room({ params }) {
   const username = decodeURIComponent(params.id[3]);
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState();
+  const router = useRouter();
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Scroll to the bottom when messages change
+    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+  }, [messages]);
 
   const fetchData = async () => {
     try {
@@ -74,31 +82,13 @@ export default function Room({ params }) {
   }
 
   return (
-  //   <div>
-  //     <h1>Chat App</h1>
-  //     <div>
-  //       Your username: <strong>{username}</strong>
-  //     </div>
-  //     <form onSubmit={sendMessage}>
-  //       <input
-  //         type="text"
-  //         value={newMessage}
-  //         onChange={(e) => setNewMessage(e.target.value)}
-  //         placeholder="Type a message..."
-  //       />
-  //       <button type="submit">Send</button>
-  //     </form>
-  //     <div>
-  //       {messages?.map((msg) => (
-  //         <div key={msg.id}>
-  //           <strong>{msg.username}</strong>: {msg.message}
-  //         </div>
-  //       ))}
-  //     </div>
-  //   </div>
-  // )
     <div className={styles.container}>
-    <h1 className={styles.title}>Chat App</h1>
+    <button 
+        className={styles.button}
+        onClick={() => {router.push('/')}}
+    >
+        Go back home?
+    </button>
     <div className={styles.userDetails}>
       Your username: <strong>{username}</strong>
     </div>
@@ -112,7 +102,7 @@ export default function Room({ params }) {
       />
       <button type="submit" className={styles.sendButton}>Send</button>
     </form>
-    <div className={styles.chatMessages}>
+    <div className={styles.chatMessages} ref={messagesContainerRef}>
       {messages?.map((msg) => (
         <div key={msg.id} className={`${styles.messageContainer} ${msg.username === username ? styles.ownMessageContainer : ''}`}>
           <div className={`${styles.messageBubble} ${msg.username === username ? styles.ownMessageBubble : ''}`}>

@@ -106,35 +106,3 @@ export default function AuthenticationForm() {
         </div>
     );
     }
-
-
-
-
-
-
-
-
-
-// import { useState } from 'react';
-// // import { useRouter } from 'next/navigation';
-// // import { Client, fql } from 'fauna'
-// import Login from '../components/Login';
-// import Signup from '../components/Signup';
-
-// export default function AuthenticationForm() {
-//     const [currentView, setCurrentView] = useState('login');
-
-//     const toggleView = () => {
-//       setCurrentView(currentView === 'login' ? 'signup' : 'login');
-//     };
- 
-//     return (
-//         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-//             {currentView === 'login' ? <Login /> : <Signup />}
-//             <button onClick={toggleView}>
-//                 Switch to {currentView === 'login' ? 'Sign Up' : 'Login'}
-//             </button>
-//             <button onClick={() => {router.push('/')}}>Go Back Home</button>
-//         </div>
-//     );
-// };
