@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Client, fql } from 'fauna'
+import styles from './Chatroom.module.css';
 
 const client = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
@@ -73,27 +74,53 @@ export default function Room({ params }) {
   }
 
   return (
-    <div>
-      <h1>Chat App</h1>
-      <div>
-        Your username: <strong>{username}</strong>
-      </div>
-      <form onSubmit={sendMessage}>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message..."
-        />
-        <button type="submit">Send</button>
-      </form>
-      <div>
-        {messages?.map((msg) => (
-          <div key={msg.id}>
-            <strong>{msg.username}</strong>: {msg.message}
-          </div>
-        ))}
-      </div>
+  //   <div>
+  //     <h1>Chat App</h1>
+  //     <div>
+  //       Your username: <strong>{username}</strong>
+  //     </div>
+  //     <form onSubmit={sendMessage}>
+  //       <input
+  //         type="text"
+  //         value={newMessage}
+  //         onChange={(e) => setNewMessage(e.target.value)}
+  //         placeholder="Type a message..."
+  //       />
+  //       <button type="submit">Send</button>
+  //     </form>
+  //     <div>
+  //       {messages?.map((msg) => (
+  //         <div key={msg.id}>
+  //           <strong>{msg.username}</strong>: {msg.message}
+  //         </div>
+  //       ))}
+  //     </div>
+  //   </div>
+  // )
+    <div className={styles.container}>
+    <h1 className={styles.title}>Chat App</h1>
+    <div className={styles.userDetails}>
+      Your username: <strong>{username}</strong>
     </div>
-  )
+    <form onSubmit={sendMessage} className={styles.chatForm}>
+      <input
+        className={styles.input}
+        type="text"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        placeholder="Type a message..."
+      />
+      <button type="submit" className={styles.sendButton}>Send</button>
+    </form>
+    <div className={styles.chatMessages}>
+      {messages?.map((msg) => (
+        <div key={msg.id} className={`${styles.messageContainer} ${msg.username === username ? styles.ownMessageContainer : ''}`}>
+          <div className={`${styles.messageBubble} ${msg.username === username ? styles.ownMessageBubble : ''}`}>
+            <span className={styles.messageText}><strong>{msg.username}</strong>: {msg.message}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+  );
 }
