@@ -4,8 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation';
 import { Client, fql } from 'fauna'
 import styles from './Home.module.css';
+import { FaunaClient } from './components/FaunaClient';
+import { CookieInfo } from './components/CookieInfo';
+import Logout from './components/Logout';
 
-const client = new Client({
+const client = FaunaClient();
+
+const streamClient = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
   endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
 })
@@ -14,44 +19,27 @@ export default function Home() {
   const [roomName, setRoomName] = useState('');
   const [existingRooms, setExistingRooms] = useState([]);
   const router = useRouter();
-  const cookieValue = getCookie("chat-loggedin");
-  const username = JSON.parse(cookieValue)?.username;
+  const info = CookieInfo()
+  const username = info?.username;
 
   useEffect(() => {
-    if (username == undefined || null) {
-      window.location.href = '/authenticationform';    
-    } else {
-      fetchData();
-    }
-  }, []);
-
-  function getCookie(name) {
-    const value = "; " + document.cookie;
-    const parts = value.split("; " + name + "=");
-    if (parts.length === 2) {
-      return parts.pop().split(";").shift();
-    }
-    return null;
-  }
+    fetchData();
+  }, [username]);
 
   const fetchData = async () => {
     try {
-      // Fetch existing rooms initially
       const existingRoomsResponse = await client.query(fql`Room.all()`);
       setExistingRooms(existingRoomsResponse.data.data);
 
-      // Set up the stream for real-time updates
-      const response = await client.query(fql`Room.all().toStream()`);
+      const response = await streamClient.query(fql`Room.all().toStream()`);
       const streamToken = response.data;
 
-      const stream = await client.stream(streamToken)
+      const stream = await streamClient.stream(streamToken)
         .on("start", event => {
           console.log("Stream start", event);
         })
         .on("add", event => {
-          console.log("Stream add --->", event?.data);
           setExistingRooms(prevRooms => {
-            // Check if the room already exists to avoid duplicates
             const existingRoom = prevRooms.find(room => room.id === event?.data.id);
             return existingRoom ? prevRooms : [...prevRooms, event?.data];
           });
@@ -85,11 +73,12 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Chat App</h1>
-      <div className={styles.userDetails}>
-        Your username: <strong>{username}</strong>
-      </div>
-      <h2>Create a Chat Room</h2>
+        <h1 className={styles.title}>Chat App</h1>
+        <span>  
+          <strong>{username}</strong>
+          <Logout /> 
+        </span>
+
       <form onSubmit={handleSubmit} className={styles.createChatForm}>
         <input
           className={styles.input}
