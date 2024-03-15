@@ -40,8 +40,9 @@ export default function Room({ params }) {
   const [messages, setMessages] = useState();
   const router = useRouter();
   const messagesContainerRef = useRef(null);
+  const messageStream = useRef(null);
+  const onlineUsersStream = useRef(null);
   const info = CookieInfo()
-  console.log('------>', info.key);
   const userName = info?.username;
 
   const client = new Client({
@@ -49,15 +50,22 @@ export default function Room({ params }) {
     endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
   })
 
+  window.onbeforeunload = () => {
+    alert('🔥');
+    console.log('🔥 Disconnecting...');
+  };
+
   useEffect(() => {
-    fetchData();
+    updateUserStatus();
+    startMessageStream();
+    startOnlineUsersStream();
   }, [userName]);
 
   useEffect(() => {
     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
   }, [messages]);
 
-  const fetchData = async () => {
+  const startMessageStream = async () => {
     try {
       const response = await streamClient.query(fql`
         let roomRef = Room.byId(${id})
@@ -65,13 +73,14 @@ export default function Room({ params }) {
       `);
   
       const streamToken = response.data;
-  
-      const stream = await streamClient.stream(streamToken)
+      if (!messageStream.current) {
+        messageStream.current = await streamClient.stream(streamToken)
         .on("start", event => {
           console.log("Stream start", event);
           getExistingMessages();
         })
         .on("add", event => {
+          console.log("Stream add", event);
           setMessages(prevMessages => {
             const existingMessage = prevMessages.find(msg => msg.id === event?.data.id);
             return existingMessage ? prevMessages : [...prevMessages, event?.data];
@@ -80,14 +89,58 @@ export default function Room({ params }) {
         .on('error', event => {
           console.log("Stream error:", event);
         });
-  
-      stream.start();
-  
-      return () => stream.close();
+        messageStream.current.start();
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+
+  const updateUserStatus = async () => {
+    try {
+      await client.query(fql`
+        let user = User.byUsername(${userName}).first()
+        let room_user = RoomUser.byUserAndRoom(user, Room.byId(${id})).first()
+        if (room_user == null) {
+          RoomUser.create({ 
+            user: user,
+            room: Room.byId(${id}),
+            isOnline: true
+          })
+        } else {
+          room_user?.update({
+            "isOnline": true
+          })
+        }
+      `); 
+    } catch (error) {
+      console.error("Error updating data:", error);
+    }
+  }
+
+  const startOnlineUsersStream = async () => {
+    try {
+      if (!onlineUsersStream.current) {
+        const response = await streamClient.query(fql`
+          RoomUser.where(.room == Room.byId(${id})).toStream()
+        `);
+        const streamToken = response.data;
+        onlineUsersStream.current = await streamClient.stream(streamToken)
+        .on("start", event => {
+          console.log("Online User stream start", event);
+        })
+        .on("add", event => {
+          console.log("New User Online", event);
+        })
+        .on('error', event => {
+          console.log("Stream error:", event);
+        });
+        onlineUsersStream.current.start();
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error); 
+    }
+  }
 
   const getExistingMessages = async () => {
     const existingMessages = await client.query(fql`
@@ -112,7 +165,9 @@ export default function Room({ params }) {
       <span>
         <button 
             className={styles.button}
-            onClick={() => {router.push('/')}}
+            onClick={() => {
+              router.push('/')
+            }}
         >
             Go back home?
         </button>

@@ -97,7 +97,7 @@ export default function AuthenticationForm() {
                 setIsLoginView(!isLoginView)
                 setUsername('')
                 setPassword('')
-                }} 
+            }} 
                 className={`${styles.button} ${styles.switchButton}`}
             >
                 Switch to {isLoginView ? 'Sign Up' : 'Login'}
