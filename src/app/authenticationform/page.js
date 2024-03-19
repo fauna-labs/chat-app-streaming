@@ -33,7 +33,6 @@ export default function AuthenticationForm() {
 
                 setCookieWithTTL("chat-loggedin", JSON.stringify(userInfo), 1440 * 60 * 1000);
                 router.push('/');
-                // window.location.href = '/';
             } catch (error) {
                 console.log(error)
             }
