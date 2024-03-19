@@ -83,6 +83,11 @@ export default function Room({ params }) {
           console.log("Stream error:", event);
         });
         messageStream.current.start();
+
+        return () => {
+          messageStream.current.close();
+          messageStream.current = null;
+        };
       }
     } catch (error) {
       console.error("Error fetching data:", error);
