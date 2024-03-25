@@ -1,17 +1,15 @@
 'use client'
 
 import styles from './Logout.module.css';
+import Cookies from 'js-cookie';
 
 export default function Logout() {
-
     const logoutHandler = (e) => {
         e.preventDefault();
 
-        const deleteCookie = (name) => {
-            document.cookie = `${name}`;
-        };
-
-        deleteCookie('chat-loggedin');
+        Cookies.remove('key');
+        Cookies.remove('username');
+        Cookies.remove('id');
         window.location.href = '/authenticationform';
     }
 

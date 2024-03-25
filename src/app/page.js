@@ -7,11 +7,6 @@ import styles from './Home.module.css';
 import Logout from './components/Logout';
 import Cookies from 'js-cookie';
 
-const streamClient = new Client({
-  secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
-  endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-})
-
 export default function Home() {
   const [roomName, setRoomName] = useState('');
   const [existingRooms, setExistingRooms] = useState([]);
@@ -28,7 +23,7 @@ export default function Home() {
   }, []);
 
   const fetchData = async () => {
-    const response = await streamClient.query(fql`Room.all().toStream()`);
+    const response = await client.query(fql`Room.all().toStream()`);
     const streamToken = response.data;
 
     const stream = await client.stream(streamToken)
@@ -41,6 +36,7 @@ export default function Home() {
         case "start":
           console.log("Stream start", event);
           break;
+          
         case "update":
         case "add":
           console.log('Stream add', event);
@@ -49,6 +45,7 @@ export default function Home() {
             return existingRoom ? prevRooms : [...prevRooms, event?.data];
           })
           break;
+
         case "remove":
           console.log("Stream update:", event);
           break;

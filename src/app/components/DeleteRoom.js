@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react'
 import { Client, fql } from 'fauna'
 import { useRouter } from 'next/navigation';
-import styles from './DeleteRoom.module.css'
+import styles from './DeleteRoom.module.css';
+import Cookies from 'js-cookie';
 
-export default function DeleteRoom({ ownerName, userName, roomId, cookieInfo }) {
+export default function DeleteRoom({ ownerName, userName, roomId }) {
     const [isOwner, setIsOwner] = useState(false);
     const router = useRouter();
 
     const client = new Client({
-        secret: cookieInfo?.key,
+        secret: Cookies.get('key'),
         endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
       })
 

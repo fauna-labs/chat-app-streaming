@@ -6,31 +6,7 @@ import styles from './Room.module.css';
 import { useRouter } from 'next/navigation';
 import Logout from '../../components/Logout'
 import DeleteRoom from '@/app/components/DeleteRoom';
-
-const streamClient = new Client({
-  secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
-  endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-})
-
-const CookieInfo = () => {
-  const cookies = document.cookie.split(';');
-  let cookieData;
-
-  for (const cookie of cookies) {
-    const [name, value] = cookie.split('=').map((c) => c.trim());
-    if (name === 'chat-loggedin') {
-      cookieData = JSON.parse(decodeURIComponent(value));
-      break;
-    }
-  }
-
-  if (!cookieData) {
-    console.log('no valid cookie saved, please log in');
-    window.location.href = '/authenticationform';
-  }
-
-  return cookieData;
-};
+import Cookies from 'js-cookie';
 
 export default function Room({ params }) {
   const id = params.id[0];
@@ -40,57 +16,54 @@ export default function Room({ params }) {
   const [messages, setMessages] = useState([]);
   const router = useRouter();
   const messagesContainerRef = useRef(null);
-  const messageStream = useRef(null);
-  const info = CookieInfo()
-  const userName = info?.username;
+  const userName = Cookies.get('username');
 
   const client = new Client({
-    secret: info.key,
+    secret: Cookies.get('key'),
     endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
   })
 
   useEffect(() => {
     startMessageStream();
-  }, [userName]);
+  }, []);
 
   useEffect(() => {
     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
   }, [messages]);
 
+
   const startMessageStream = async () => {
-    try {
-      const response = await streamClient.query(fql`
-        let roomRef = Room.byId(${id})
-        Message.byRoomRef(roomRef).toStream()
-      `);
-  
-      const streamToken = response.data;
-      if (!messageStream.current) {
-        messageStream.current = await streamClient.stream(streamToken)
-        .on("start", event => {
+    getExistingMessages();
+    const response = await client.query(fql`
+      let roomRef = Room.byId(${id})
+      Message.byRoomRef(roomRef).toStream()
+    `);
+    const streamToken = response.data;
+
+    const stream = await client.stream(streamToken)
+
+    for await (const event of stream) {
+      switch (event.type) {
+        case "start":
           console.log("Stream start", event);
-          getExistingMessages();
-        })
-        .on("add", event => {
-          console.log("Stream add", event);
+          break;
+          
+        case "update":
+        case "add":
+          console.log('Stream add', event);
           setMessages(prevMessages => {
-            console.log('--->', prevMessages);
             const existingMessage = prevMessages.find(msg => msg.id === event?.data.id);
             return existingMessage ? prevMessages : [...prevMessages, event?.data];
           });
-        })
-        .on('error', event => {
-          console.log("Stream error:", event);
-        });
-        messageStream.current.start();
+          break;
 
-        return () => {
-          messageStream.current.close();
-          messageStream.current = null;
-        };
+        case "remove":
+          console.log("Stream update:", event);
+          break;
+
+        case "error":
+          console.log("Stream error:", event)
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
     }
   };
 
@@ -123,7 +96,7 @@ export default function Room({ params }) {
         >
             Go back home?
         </button>
-        <DeleteRoom ownerName={ownerName} userName={userName} roomId={id} cookieInfo={info}/>
+        <DeleteRoom ownerName={ownerName} userName={userName} roomId={id} />
         <Logout />         
       </span>
       <div className={styles.userDetails}>
