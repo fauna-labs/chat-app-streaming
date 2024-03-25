@@ -9,11 +9,26 @@ import Cookies from 'js-cookie';
 export default function DeleteRoom({ ownerName, userName, roomId }) {
     const [isOwner, setIsOwner] = useState(false);
     const router = useRouter();
+    const [client, setClient] = useState(null);
+    const userKey = Cookies.get('key');
 
-    const client = new Client({
-        secret: Cookies.get('key'),
-        endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-      })
+    useEffect(() => {
+        if (!userKey) {
+          router.push('/authenticationform');
+          return;
+        }
+        
+        const initClient = async () => {
+          const newClient = new Client({
+            secret: userKey,
+            endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+          });
+    
+          setClient(newClient);
+        };
+    
+        initClient();
+      }, [userKey]);
 
     useEffect(() => {
         if(ownerName === userName) {

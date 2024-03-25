@@ -26,17 +26,10 @@ export default function AuthenticationForm() {
                     Login(${username}, ${password})
                 `)
 
-                // const userInfo = {
-                //     username: result?.data.user.username,
-                //     id: result?.data.user.id,
-                //     key: result?.data.cred.secret,
-                // };
-
                 Cookies.set('username', result.data.user.username, { expires: 1})
                 Cookies.set('id', result?.data.user.id, { expires: 1})
                 Cookies.set('key', result?.data.cred.secret, { expires: 1})
 
-                // setCookieWithTTL("chat-loggedin", JSON.stringify(userInfo), 1440 * 60 * 1000);
                 router.push('/');
             } catch (error) {
                 console.log(error)
@@ -67,13 +60,6 @@ export default function AuthenticationForm() {
             }
         }
     };
-
-    // function setCookieWithTTL(name, value, ttl) {
-    //     let now = new Date();
-    //     now.setTime(now.getTime() + ttl);
-    //     const expires = "expires=" + now.toUTCString();
-    //     document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    // }   
 
     return (
         <div className={styles.container}>
@@ -106,7 +92,6 @@ export default function AuthenticationForm() {
             >
                 Switch to {isLoginView ? 'Sign Up' : 'Login'}
             </button>
-            <button onClick={() => router.push('/')} className={`${styles.button} ${styles.homeButton}`}>Go Back Home</button>
         </div>
     );
     }

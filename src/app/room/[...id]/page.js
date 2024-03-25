@@ -17,22 +17,38 @@ export default function Room({ params }) {
   const router = useRouter();
   const messagesContainerRef = useRef(null);
   const streamRef = useRef(null);
+  const [client, setClient] = useState(null);
+  const userKey = Cookies.get('key');
 
   const userName = Cookies.get('username');
 
-  const client = new Client({
-    secret: Cookies.get('key'),
-    endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-  })
+  useEffect(() => {
+    if (!userKey) {
+      router.push('/authenticationform');
+      return;
+    }
+    
+    const initClient = async () => {
+      const newClient = new Client({
+        secret: userKey,
+        endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+      });
+
+      setClient(newClient);
+    };
+
+    initClient();
+  }, [userKey]);
 
   useEffect(() => {
+    if (!client) return;
     startMessageStream();
-  }, []);
+  }, [client]);
 
   useEffect(() => {
+    if(!client) return;
     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
   }, [messages]);
-
 
   const startMessageStream = async () => {
     getExistingMessages();
@@ -91,6 +107,8 @@ export default function Room({ params }) {
     `)
     setNewMessage('')
   }
+
+  if (!client) return null;
 
   return (
     <div className={styles.container}>
