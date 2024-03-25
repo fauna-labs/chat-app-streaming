@@ -1,0 +1,78 @@
+collection User {
+  history_days 0
+  index byUsername {
+    terms [.username]
+  }
+}
+
+collection Room {}
+
+collection Message {
+  history_days 0
+  index byRoomRef {
+    terms [.roomRef]
+  }
+  index byRoomId {
+    terms [.roomId]
+  }
+}
+
+@role(server)
+function Login(username, password) {
+  let user = User.byUsername(username).first()
+  let cred = Credentials.byDocument(user)!.login(password)
+  let result = {
+    user: user,
+    cred: cred
+  }
+  result
+}
+
+@role(server)
+function Signup(username, password) {
+  let user = User.create({
+    username: username
+  })
+  Credentials.create({
+    document: user,
+    password: password
+  })
+}
+
+role AuthenticatedRole {
+  privileges User {
+    read
+    create
+    write
+    delete
+  }
+  privileges Room {
+    read
+    create
+    write
+    delete
+  }
+  privileges Message {
+    read
+    create
+    write
+    delete
+  }
+
+  membership User
+}
+
+role UnAuthenticatedRole {
+  privileges User {
+    read
+  }
+  privileges Signup {
+    call
+  }
+  privileges Login {
+    call
+  }
+}
+
+
+

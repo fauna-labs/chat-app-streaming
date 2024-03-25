@@ -27,15 +27,22 @@ npm install
 
 ```
 
-TODO: Add instructions for setting up Fauna database. Include schema and indexes and seed script to populate the database and setup basic ABAC roles.
+3. Configure Fauna database
+    - Login to your Fauna CLI using `fauna cloud-login`. If you don't have the CLI installed, you can install it using `npm install -g fauna-shell`
+    - Create a new database using `fauna create-database chat-app`
+    - Migrate the schema using `fauna schema push`
+    - Create a new key for your UnAuthenticatedRole by running the following FQL code in the Fauna shell
+    
+    ```
+        Key.create({
+            role: 'UnAuthenticatedRole'
+        })
+    ```
 
-3. Create a Fauna database and create the following collections:
-`User`, `Message`, `Room`. 
 
-4. Create a Fauna key and add it to a `.env` file in the root of the project.
+4. Save the key to a `.env` file in the root of the project.
 
 ```bash
-NEXT_PUBLIC_FAUNA_SECRET=<Fauna-Secret>
 # UnAuthenticatedRole
 NEXT_PUBLIC_FAUNA_UNAUTHENTICATED_SECRET=<Unauth-user-key-for-your-database>
 ```
