@@ -16,6 +16,8 @@ export default function Room({ params }) {
   const [messages, setMessages] = useState([]);
   const router = useRouter();
   const messagesContainerRef = useRef(null);
+  const streamRef = useRef(null);
+
   const userName = Cookies.get('username');
 
   const client = new Client({
@@ -40,29 +42,34 @@ export default function Room({ params }) {
     `);
     const streamToken = response.data;
 
-    const stream = await client.stream(streamToken)
-
-    for await (const event of stream) {
-      switch (event.type) {
-        case "start":
-          console.log("Stream start", event);
-          break;
-          
-        case "update":
-        case "add":
-          console.log('Stream add', event);
-          setMessages(prevMessages => {
-            const existingMessage = prevMessages.find(msg => msg.id === event?.data.id);
-            return existingMessage ? prevMessages : [...prevMessages, event?.data];
-          });
-          break;
-
-        case "remove":
-          console.log("Stream update:", event);
-          break;
-
-        case "error":
-          console.log("Stream error:", event)
+    if (!streamRef.current) {
+      streamRef.current = await client.stream(streamToken)
+      for await (const event of streamRef.current) {
+        switch (event.type) {
+          case "start":
+            console.log("Stream start", event);
+            break;
+            
+          case "update":
+          case "add":
+            console.log('Stream add', event);
+            setMessages(prevMessages => {
+              const existingMessage = prevMessages.find(msg => msg.id === event?.data.id);
+              return existingMessage ? prevMessages : [...prevMessages, event?.data];
+            });
+            break;
+  
+          case "remove":
+            console.log("Stream update:", event);
+            break;
+  
+          case "error":
+            console.log("Stream error:", event)
+        }
+      }
+  
+      return () => {
+        streamRef.current.close();
       }
     }
   };

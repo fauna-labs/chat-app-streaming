@@ -12,14 +12,26 @@ export default function Home() {
   const [existingRooms, setExistingRooms] = useState([]);
   const router = useRouter();
   const username = Cookies.get('username');
+  const userKey = Cookies.get('key');
 
-  const client = new Client({
-    secret: Cookies.get('key'),
-    endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-  })
+  let client;
+
+  if (!userKey) {
+    console.log('User not logged in');
+    // This means the user is not logged in
+    router.push('/authenticationform');
+  } else {
+    // userKey
+    client = new Client({
+      secret: userKey,
+      endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+    })
+  }
 
   useEffect(() => {
-    fetchData();
+    if (client) {
+      fetchData();
+    }
   }, []);
 
   const fetchData = async () => {
