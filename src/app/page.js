@@ -90,7 +90,11 @@ export default function Home() {
     }
   };
 
-  if (!client) return null;
+  if (!client) return (
+    <div>
+      <h1>Loading...</h1>
+    </div>
+  );
 
   return (
     <div className={styles.container}>
