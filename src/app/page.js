@@ -72,6 +72,10 @@ export default function Home() {
             break;
         }
       }
+
+      return () => {
+        streamRef.current.close();
+      }
     }
   };
 
