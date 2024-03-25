@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Client, fql } from 'fauna';
 import styles from './authepage.module.css';
+import Cookies from 'js-cookie';
 
 const client = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_UNAUTHENTICATED_SECRET,
@@ -25,13 +26,17 @@ export default function AuthenticationForm() {
                     Login(${username}, ${password})
                 `)
 
-                const userInfo = {
-                    username: result?.data.user.username,
-                    id: result?.data.user.id,
-                    key: result?.data.cred.secret,
-                };
+                // const userInfo = {
+                //     username: result?.data.user.username,
+                //     id: result?.data.user.id,
+                //     key: result?.data.cred.secret,
+                // };
 
-                setCookieWithTTL("chat-loggedin", JSON.stringify(userInfo), 1440 * 60 * 1000);
+                Cookies.set('username', result.data.user.username, { expires: 1})
+                Cookies.set('id', result?.data.user.id, { expires: 1})
+                Cookies.set('key', result?.data.cred.secret, { expires: 1})
+
+                // setCookieWithTTL("chat-loggedin", JSON.stringify(userInfo), 1440 * 60 * 1000);
                 router.push('/');
             } catch (error) {
                 console.log(error)
@@ -63,12 +68,12 @@ export default function AuthenticationForm() {
         }
     };
 
-    function setCookieWithTTL(name, value, ttl) {
-        let now = new Date();
-        now.setTime(now.getTime() + ttl);
-        const expires = "expires=" + now.toUTCString();
-        document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    }   
+    // function setCookieWithTTL(name, value, ttl) {
+    //     let now = new Date();
+    //     now.setTime(now.getTime() + ttl);
+    //     const expires = "expires=" + now.toUTCString();
+    //     document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    // }   
 
     return (
         <div className={styles.container}>

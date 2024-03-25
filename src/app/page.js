@@ -5,76 +5,57 @@ import { useRouter } from 'next/navigation';
 import { Client, fql } from 'fauna'
 import styles from './Home.module.css';
 import Logout from './components/Logout';
+import Cookies from 'js-cookie';
 
 const streamClient = new Client({
   secret: process.env.NEXT_PUBLIC_FAUNA_SECRET,
   endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
 })
 
-const CookieInfo = () => {
-  const cookies = document.cookie.split(';');
-  let cookieData;
-
-  for (const cookie of cookies) {
-    const [name, value] = cookie.split('=').map((c) => c.trim());
-    if (name === 'chat-loggedin') {
-      cookieData = JSON.parse(decodeURIComponent(value));
-      break;
-    }
-  }
-
-  if (!cookieData) {
-    console.log('no valid cookie saved, please log in');
-    window.location.href = '/authenticationform';
-  }
-
-  return cookieData;
-};
-
-
 export default function Home() {
   const [roomName, setRoomName] = useState('');
   const [existingRooms, setExistingRooms] = useState([]);
   const router = useRouter();
-  const info = CookieInfo()
-  const username = info?.username;
+  const username = Cookies.get('username');
 
   const client = new Client({
-    secret: info.key,
+    secret: Cookies.get('key'),
     endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
   })
 
   useEffect(() => {
     fetchData();
-  }, [username]);
+  }, []);
 
   const fetchData = async () => {
-    try {
-      const existingRoomsResponse = await client.query(fql`Room.all()`);
-      setExistingRooms(existingRoomsResponse.data.data);
+    const response = await streamClient.query(fql`Room.all().toStream()`);
+    const streamToken = response.data;
 
-      const response = await streamClient.query(fql`Room.all().toStream()`);
-      const streamToken = response.data;
+    const stream = await client.stream(streamToken)
 
-      const stream = await streamClient.stream(streamToken)
-        .on("start", event => {
+    const existingRoomsResponse = await client.query(fql`Room.all()`);
+    setExistingRooms(existingRoomsResponse.data.data);
+
+    for await (const event of stream) {
+      switch (event.type) {
+        case "start":
           console.log("Stream start", event);
-        })
-        .on("add", event => {
+          break;
+        case "update":
+        case "add":
+          console.log('Stream add', event);
           setExistingRooms(prevRooms => {
             const existingRoom = prevRooms.find(room => room.id === event?.data.id);
             return existingRoom ? prevRooms : [...prevRooms, event?.data];
-          });
-        })
-        .on('error', event => {
-          console.log("Stream error:", event);
-        });
+          })
+          break;
+        case "remove":
+          console.log("Stream update:", event);
+          break;
 
-      stream.start();
-
-      return () => stream.close();
-    } catch (error) {
-      console.error("Error fetching data:", error);
+        case "error":
+          console.log("Stream error:", event)
+      }
     }
   };
 
