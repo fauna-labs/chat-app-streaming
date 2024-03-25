@@ -12,26 +12,14 @@ export default function Home() {
   const [existingRooms, setExistingRooms] = useState([]);
   const router = useRouter();
   const username = Cookies.get('username');
-  const userKey = Cookies.get('key');
 
-  let client;
-
-  if (!userKey) {
-    console.log('User not logged in');
-    // This means the user is not logged in
-    router.push('/authenticationform');
-  } else {
-    // userKey
-    client = new Client({
-      secret: userKey,
-      endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
-    })
-  }
+  const client = new Client({
+    secret: Cookies.get('key'),
+    endpoint: process.env.NEXT_PUBLIC_FAUNA_ENDPOINT,
+  })
 
   useEffect(() => {
-    if (client) {
-      fetchData();
-    }
+    fetchData();
   }, []);
 
   const fetchData = async () => {
@@ -112,3 +100,12 @@ export default function Home() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
