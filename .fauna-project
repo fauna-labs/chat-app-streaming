@@ -2,4 +2,4 @@ default=dev
 
 [environment.dev]
 endpoint=cloud-us
-database=mystreamdb
+database=chat-app
